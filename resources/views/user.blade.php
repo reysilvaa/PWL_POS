@@ -10,7 +10,7 @@
             <th>Jml Pengguna</th>
             </tr>
         <tr>
-            <td>{($data)}</td>
+            <td>{{$data}}</td>
         </tr>
     </table>
 </body>

@@ -6,15 +6,22 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 class UserController extends Controller {
     public function index() {
-        $user = UserModel::firstOrNew([
-            'username' => 'manager33',
-            'nama' => 'Manager Tiga Tiga',
+        $user = UserModel::create([
+            'username' => 'managerll',
+            'nama' => 'Manager11',
             'password' => Hash::make('12345'),
-            'level_id' => 2
-        ],
-    );
-    $user->save();
-    return view('user', ['data' => $user]);
+            'level_id' => 2,
+        ]);
+        
+        $user->username = 'manager12';
+        $user->save();
+        
+        $user->wasChanged(); // true
+        $user->wasChanged('username'); // true
+        $user->wasChanged(['username', 'level_id']); // true
+        $user->wasChanged('nama'); // false
+        dd($user->wasChanged(['nama', 'username'])); // true
+        
     }
 }
 // $user = UserModel::where('username', 'manager9')->firstorFail();

@@ -10,11 +10,8 @@ class KategoriSeeder extends Seeder
     public function run(): void
     {
         $data = [
-            ['kategori_id' => 1, 'kategori_kode' => 'ELE', 'kategori_nama' => 'Elektronik'],
-            ['kategori_id' => 2, 'kategori_kode' => 'PAK', 'kategori_nama' => 'Pakaian'],
-            ['kategori_id' => 3, 'kategori_kode' => 'FUR', 'kategori_nama' => 'Furniture'],
-            ['kategori_id' => 4, 'kategori_kode' => 'OTO', 'kategori_nama' => 'Otomotif'],
-            ['kategori_id' => 5, 'kategori_kode' => 'OLG', 'kategori_nama' => 'Olahraga'],
+            ['kategori_id' => 6, 'kategori_kode' => 'CML', 'kategori_nama' => 'Camilan'],
+            ['kategori_id' => 7, 'kategori_kode' => 'MNR', 'kategori_nama' => 'Minuman Ringan']
         ];
     
         DB::table('m_kategori')->insert($data);

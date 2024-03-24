@@ -6,10 +6,9 @@
 @section('content_header_subtitle', 'Kategori')
 
 @section('content')
-<div class="container">
     <div class="card">
         <div class="card-header">Manage Kategori</div>
-        <div class="card-body">
+        <div class="card-body">     
             {{ $dataTable->table() }}
         </div>
     </div>

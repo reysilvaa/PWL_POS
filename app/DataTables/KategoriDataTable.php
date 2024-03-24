@@ -20,11 +20,22 @@ class KategoriDataTable extends DataTable
      * @param QueryBuilder $query Results from query() method.
      */
     public function dataTable(QueryBuilder $query): EloquentDataTable
-    {
-        return (new EloquentDataTable($query))
-/*             ->addColumn('action', 'kategori.action') */
-            ->setRowId('id');
-    }
+{
+    return (new EloquentDataTable($query))
+        ->addColumn('action', function ($kategori) {
+            return '<a href="' . route('kategori.edit', $kategori->kategori_id) . '" class="btn btn-warning btn-md">
+                <i class="fas fa-edit"></i>
+            </a>
+            <a href="' . route('kategori.delete', $kategori->kategori_id) . '" class="btn btn-danger btn-md">
+                <i class="fas fa-trash"></i>
+            </a>';
+
+
+        })
+        ->setRowId('kategori_id');
+}
+
+    
 
     /**
      * Get the query source of dataTable.
@@ -47,6 +58,7 @@ class KategoriDataTable extends DataTable
                     ->orderBy(1)
                     ->selectStyleSingle()
                     ->buttons([
+                        Button::make('add')->text('+ Tambah'),
                         Button::make('excel'),
                         Button::make('csv'),
                         Button::make('pdf'),
@@ -59,20 +71,20 @@ class KategoriDataTable extends DataTable
     /**
      * Get the dataTable columns definition.
      */
-    public function getColumns(): array
-    {
+    public function getColumns(): array {
         return [
-    /*         Column::computed('action')
-                  ->exportable(false)
-                  ->printable(false)
-                  ->width(60)
-                  ->addClass('text-center'), */
             Column::make('kategori_id'),
             Column::make('kategori_kode'),
             Column::make('kategori_nama'),
             Column::make('created_at'),
             Column::make('updated_at'),
-        ];
+            Column::computed('action')
+            ->exportable(false)
+            ->printable(false)
+            ->width(60)
+            ->addClass('text-center'),
+            
+            ];
     }
 
     /**

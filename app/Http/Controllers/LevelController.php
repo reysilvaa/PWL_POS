@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\LevelRequest;
+use App\Models\LevelModel;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 
 use Illuminate\Http\Request;
@@ -9,14 +12,26 @@ use Illuminate\Http\Request;
 
 class LevelController extends Controller
 {
-    public function index(){
-        // DB::insert('insert into m_level(level_kode, level_nama, created_at) values(?, ?, ?)',['CUS', 'Pelanggan', now()]);
-        // return 'Insert data baru berhasil';
+    public function index() {
+        // $user = LevelModel::with('level_id')->get();
+        // return view('user.tambah', ['data' => $user]);
+        return view('level.index');
 
-        // $row = DB::update('update m_level set level_nama = ? where level_kode = ?', ['Customer', 'CUS']);
-        // return 'Update data berhasil. Jumlah data yang diupdate: ' . $row. 'baris';
 
-        $data = DB::select('select * from m_level');
-        return view('level' , ['data' => $data]);
     }
+    public function tambah(){
+        return view('level.tambah');
+
+    }
+    public function tambah_simpan(LevelRequest $request): RedirectResponse
+{
+    // Retrieve validated input data
+    $validated = $request->validated();
+
+    // Retrieve a part of the validated input data
+    $validated = $request->safe();
+
+    return redirect('/level');
+}
+
 }

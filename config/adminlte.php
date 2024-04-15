@@ -322,6 +322,11 @@ return [
             'icon' => 'fas fa-fw fa-user',
         ],
         [
+            'text' => 'Level',
+            'url' => '/level',
+            'icon' => 'fas fa-fw fa-user',
+        ],
+        [
             'text' => 'Kategori',
             'url' => '/kategori',
             'icon' => 'fas fa-fw fa-user',

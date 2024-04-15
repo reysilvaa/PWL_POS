@@ -14,13 +14,13 @@ return new class extends Migration
         Schema::create('t_penjualan', function (Blueprint $table) {
             $table->id('penjualan_id');
             $table->unsignedBigInteger('user_id')->index();
-            $table->string('pembeli', 50);
+            $table->string('pembeli', 50)->unique();
             $table->string('penjualan_kode', 20);
             $table->dateTime('penjualan_tanggal');
             $table->timestamps();
 
+            // mendefinisikan FK
             $table->foreign('user_id')->references('user_id')->on('m_user');
-
         });
     }
 

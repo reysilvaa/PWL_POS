@@ -12,6 +12,7 @@ use App\Http\Controllers\BarangController;
 use App\Http\Controllers\ManagerController;
 use App\Http\Controllers\StokController;
 use App\Http\Controllers\TransaksiController;
+use App\Http\Controllers\Api\RegisterController;
 
 /*
 |--------------------------------------------------------------------------
@@ -125,3 +126,6 @@ Route::group(['middleware' => ['auth']], function () {
         Route::resource('manager', ManagerController::class);
     });
 });
+
+Route::post('/register1', 'App\Http\Controllers\Api\RegisterController')->name('register1');
+Route::post('/transaksi', [BarangController::class, 'store']);

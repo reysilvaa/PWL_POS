@@ -11,10 +11,9 @@ class KategoriSeeder extends Seeder
     {
         $data = [
             ['kategori_id' => 1, 'kategori_kode' => 'CML', 'kategori_nama' => 'Camilan'],
-            ['kategori_id' => 2, 'kategori_kode' => 'MNR', 'kategori_nama' => 'Minuman Ringan']
+            ['kategori_id' => 2, 'kategori_kode' => 'MNR', 'kategori_nama' => 'Minuman Ringan'],
         ];
 
         DB::table('m_kategori')->insert($data);
     }
-
 }

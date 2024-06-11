@@ -5,57 +5,58 @@ namespace App\Http\Controllers;
 use App\Models\BarangModel;
 use App\Models\TransaksiDetailModel;
 use App\Models\TransaksiModel;
+use App\Models\UserModel;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
-use App\Models\UserModel;
-use App\Models\StokModel;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Session;
+
 
 class TransaksiController extends Controller
 {
-    // Menampilkan halaman awal transaksi
-    public function index() {
+    public function index()
+    {
         $breadcrumb = (object) [
             'title' => 'Daftar Transaksi',
-            'list' => ['Home', 'Transaksi']
+            'list' => ['Home', 'Transaksi Penjualan']
         ];
 
         $page = (object) [
-            'title' => 'Daftar Transaksi yang terdaftar dalam sistem'
+            'title' => 'Daftar Transaksi Penjualan yang terdaftar dalam sistem'
         ];
 
-        $activeMenu = 'transaksi'; //set menu yang aktif
+        $activeMenu = 'penjualan';
 
-        $users = UserModel::all(); //ambil data user untuk filter user
-
-        return view('transaksi.index', ['breadcrumb' => $breadcrumb, 'page' => $page, 'activeMenu' => $activeMenu, 'user' => $users]);
+        $user = UserModel::all();
+        return view('penjualan.index', [
+            'breadcrumb' => $breadcrumb,
+            'page' => $page,
+            'user' => $user,
+            'activeMenu' => $activeMenu
+        ]);
     }
-
-    // Ambil data transaksi dalam bentuk json untuk datatables
     public function list(Request $request)
     {
-        $transaksis = TransaksiModel::select('penjualan_id', 'penjualan_kode','user_id', 'pembeli', 'penjualan_tanggal')->with('user');
+        $penjualans = TransaksiModel::select('penjualan_id', 'penjualan_kode', 'penjualan_tanggal', 'user_id', 'pembeli')
+            ->with('user');
 
-        // Filter data transaksi berdasarkan user_id
         if ($request->user_id) {
-            $transaksis->where('user_id', $request->user_id);
+            $penjualans->where('user_id', $request->user_id);
         }
 
-
-        return DataTables::of($transaksis)
-            ->addIndexColumn() // menambahkan kolom index / no urut (default nama kolom: DT_RowIndex)
-            ->addColumn('aksi', function ($transaksi) {
-                $btn = '<a href="'.url('/transaksi/' . $transaksi->penjualan_id).'" class="btn btn-info btn-sm">Detail</a> ';
-                $btn .= '<a href="'.url('/transaksi/' . $transaksi->penjualan_id . '/edit').'" class="btn btn-warning btn-sm">Edit</a> ';
-                $btn .= '<form class="d-inline-block" method="POST" action="'. url('/transaksi/'.$transaksi->penjualan_id).'">'.
-                            csrf_field() . method_field('DELETE') .
-                            '<button type="submit" class="btn btn-danger btn-sm" onclick="return confirm(\'Apakah Anda yakin menghapus data ini?\');">Hapus</button></form>';
+        return DataTables::of($penjualans)
+            ->addIndexColumn()
+            ->addColumn('aksi', function ($penjualans) {
+                $btn = '<a href="' . url('/penjualan/' . $penjualans->penjualan_id) . '" class="btn btn-primary" style="width: 40px; height: 40px; margin-right: 5px;"><i class="fas fa-eye"></i></a>';
+                // $btn .= '<a href="' . url('/penjualan/' . $penjualans->penjualan_id . '/edit') . '" class="btn btn-warning btn-sm">Edit</a> ';
+                $btn .= '<form class="d-inline-block" method="POST" action="' . url('/penjualan/' . $penjualans->penjualan_id) . '">'
+                    . csrf_field() . method_field('DELETE') . '<button type="submit" class="btn btn-danger" style="width: 40px; height: 40px;" onclick="return confirm(\'Apakah Anda Yakin Menghapus Data Ini ? \');"><i class="fas fa-trash-alt"></i></button></form>';
                 return $btn;
             })
             ->rawColumns(['aksi'])
             ->make(true);
     }
 
-    // Menampilkan halaman form tambah
     public function create()
     {
         $breadcrumb = (object) [
@@ -64,143 +65,157 @@ class TransaksiController extends Controller
         ];
 
         $page = (object) [
-            'title' => 'Tambah Transaksi'
+            'title' => 'Tambah Transaksi baru'
         ];
-
-        $activeMenu = 'transaksi'; //set menu yang aktif
 
         $users = UserModel::all();
         $barang = BarangModel::all();
+        $activeMenu = 'penjualan';
 
-        return view('transaksi.create', ['breadcrumb' => $breadcrumb, 'page' => $page, 'activeMenu' => $activeMenu, 'user' => $users, 'barang' => $barang]);
+        return view('penjualan.create', [
+            'breadcrumb' => $breadcrumb,
+            'page' => $page,
+            'users' => $users,
+            'barang' => $barang,
+            'activeMenu' => $activeMenu
+        ]);
     }
 
-    // Menyimpan data transaksi baru
     public function store(Request $request)
     {
-        $request->validate([
-            'user_id' => 'required',
-            'pembeli' => 'required|string|max:100',
+        $validatedData = $request->validate([
+            'penjualan_kode' => 'required|string|max:255',
+            'pembeli' => 'required|string|max:255',
+            'tanggal' => 'required|date',
+            'user' => 'required|exists:m_user,user_id',
+            'barang' => 'required|array',
+            'barang.*.id' => 'exists:m_barang,barang_id',
+            'barang.*.jumlah' => 'nullable|integer|min:1',
         ]);
 
-        $transaksi = new TransaksiModel();
-        $transaksi->user_id = $request->user_id;
-        $transaksi->pembeli = $request->pembeli;
-        $transaksi->penjualan_kode = 'PJ-'.date('YmdHis');
-        $transaksi->penjualan_tanggal = date('Y-m-d H:i:s');
-        $transaksi->save();
+        $penjualan = new TransaksiModel();
+        $penjualan->penjualan_kode = $validatedData['penjualan_kode'];
+        $penjualan->pembeli = $validatedData['pembeli'];
+        $penjualan->penjualan_tanggal = $validatedData['tanggal'];
+        $penjualan->user_id = $validatedData['user'];
+        $penjualan->save();
 
-        for ($i=0; $i < count($request->barang_id); $i++) {
-            $detail = new TransaksiDetailModel();
-            $detail->penjualan_id = $transaksi->penjualan_id;
-            $detail->barang_id = $request->barang_id[$i];
-            $detail->jumlah = $request->jumlah[$i];
-
-            $barang = BarangModel::find($request->barang_id[$i]);
-            $detail->harga = $barang->harga_jual;
-
-            $detail->save();
-            // $barang->save();
-
-            // Kurangi stok barang
-            StokModel::where('barang_id', $request->barang_id[$i])->decrement('stok_jumlah', $request->jumlah[$i]);
+        foreach ($validatedData['barang'] as $item) {
+            // Cek apakah barang dipilih tanpa jumlah tertentu
+            if (!empty($item['id'])) {
+                $barang = BarangModel::find($item['id']);
+                $detailPenjualan = new TransaksiDetailModel();
+                $detailPenjualan->penjualan_id = $penjualan->penjualan_id;
+                $detailPenjualan->barang_id = $item['id'];
+                // Periksa apakah jumlah barang telah diisi, jika tidak, maka dianggap 0
+                $detailPenjualan->jumlah = isset($item['jumlah']) ? $item['jumlah'] : 0;
+                $detailPenjualan->harga = $barang->harga_jual;
+                $detailPenjualan->save();
+            }
         }
 
-        // dd($request->all());
-
-        return redirect('/transaksi')->with('success', 'Data transaksi berhasil disimpan');
+        return redirect('/penjualan')->with('success', 'Transaksi berhasil disimpan.');
     }
 
-    // Menampilkan detail transaksi
-    public function show($id)
+    public function show(string $id)
     {
-        $transaksi = TransaksiModel::with('user')->with('detail_penjualan')->find($id);
+        $penjualan = TransaksiModel::with(['detail', 'user'])->find($id);
 
         $breadcrumb = (object) [
-            'title' => 'Detail Transaksi',
-            'list' => ['Home', 'Transaksi', 'Detail']
+            'title' => 'Detail Transaksi Penjualan ',
+            'list' => ['Home', 'Transaksi Penjualan ', 'Detail']
         ];
 
         $page = (object) [
-            'title' => 'Detail Transaksi'
+            'title' => 'Detail Transaksi Penjualan '
         ];
 
-        $activeMenu = 'transaksi'; //set menu yang aktif
+        $activeMenu = 'penjualan';
 
-        return view('transaksi.show', ['breadcrumb' => $breadcrumb, 'page' => $page, 'activeMenu'
-        => $activeMenu, 'transaksi' => $transaksi]);
-
+        return view('penjualan.show', [
+            'breadcrumb' => $breadcrumb,
+            'page' => $page,
+            'penjualan' => $penjualan,
+            'activeMenu' => $activeMenu
+        ]);
     }
-
-    // Menampilkan halaman form edit transaksi
-    public function edit($id)
+    public function edit(string $id)
     {
-        $transaksi = TransaksiModel::with('user')->with('detail_penjualan')->find($id);
+        $penjualan = TransaksiModel::with(['detail', 'user'])->find($id);
 
-        $breadcrumb = (object) [
-            'title' => 'Edit Transaksi',
-            'list' => ['Home', 'Transaksi', 'Edit']
-        ];
+        if (!$penjualan) {
+            return redirect('/penjualan')->with('error', 'Data Transaksi tidak ditemukan');
+        }
 
-        $page = (object) [
-            'title' => 'Edit Transaksi'
-        ];
-
-        $activeMenu = 'transaksi'; //set menu yang aktif
-
-        $barang = BarangModel::all();
         $users = UserModel::all();
+        $barang = BarangModel::all();
+        $activeMenu = 'penjualan';
 
-        return view('transaksi.edit', ['breadcrumb' => $breadcrumb, 'page' => $page, 'activeMenu'
-        => $activeMenu, 'transaksi' => $transaksi, 'barang' => $barang, 'user' => $users]);
-
+        return view('penjualan.edit', [
+            'penjualan' => $penjualan,
+            'users' => $users,
+            'barang' => $barang,
+            'activeMenu' => $activeMenu
+        ]);
     }
 
-    // Menyimpan perubahan data transaksi
-    public function update(Request $request, $id)
+    public function update(Request $request, string $id)
     {
-        $request->validate([
-            'user_id' => 'required',
-            'pembeli' => 'required|string|max:100',
+        $validatedData = $request->validate([
+            'penjualan_kode' => 'required|string|max:255',
+            'pembeli' => 'required|string|max:255',
+            'tanggal' => 'required|date',
+            'user' => 'required|exists:m_user,user_id',
+            'barang' => 'required|array',
+            'barang.*.id' => 'exists:m_barang,barang_id',
+            'barang.*.jumlah' => 'nullable|integer|min:1',
         ]);
 
-        $transaksi = TransaksiModel::find($id);
-        $transaksi->user_id = $request->user_id;
-        $transaksi->pembeli = $request->pembeli;
-        $transaksi->save();
+        $penjualan = TransaksiModel::find($id);
 
-        $transaksi->detail_penjualan()->delete();
-
-        for ($i=0; $i < count($request->barang_id); $i++) {
-            $detail = new TransaksiDetailModel();
-            $detail->penjualan_id = $transaksi->penjualan_id;
-            $detail->barang_id = $request->barang_id[$i];
-            $detail->jumlah = $request->jumlah[$i];
-
-            $barang = BarangModel::find($request->barang_id[$i]);
-            $detail->harga = $barang->harga_jual;
-
-            $detail->save();
-            $barang->save();
+        if (!$penjualan) {
+            return redirect('/penjualan')->with('error', 'Data Transaksi tidak ditemukan');
         }
 
-        return redirect('/transaksi')->with('success', 'Data transaksi berhasil diubah');
+        $penjualan->penjualan_kode = $validatedData['penjualan_kode'];
+        $penjualan->pembeli = $validatedData['pembeli'];
+        $penjualan->penjualan_tanggal = $validatedData['tanggal'];
+        $penjualan->user_id = $validatedData['user'];
+        $penjualan->save();
+
+        // Delete existing details
+        $penjualan->detail()->delete();
+
+        // Save new details
+        foreach ($validatedData['barang'] as $item) {
+            if (!empty($item['id'])) {
+                $barang = BarangModel::find($item['id']);
+                $detailPenjualan = new TransaksiDetailModel();
+                $detailPenjualan->penjualan_id = $penjualan->penjualan_id;
+                $detailPenjualan->barang_id = $item['id'];
+                $detailPenjualan->jumlah = isset($item['jumlah']) ? $item['jumlah'] : 0;
+                $detailPenjualan->harga = $barang->harga_jual;
+                $detailPenjualan->save();
+            }
+        }
+
+        return redirect('/penjualan')->with('success', 'Data Transaksi berhasil diperbarui.');
     }
 
-    // Menghapus data transaksi
-    public function destroy($id)
-    {
-        $check = TransaksiModel::find($id);
-        if (!$check) {
-            return redirect('/transaksi')->with('error', 'Data transaksi tidak ditemukan');
-        }
 
+    public function destroy(string $id)
+    {
+        $penjualan = TransaksiModel::find($id);
+        if (!$penjualan) {
+            return redirect('/penjualan')->with('error', 'Data Transaksi tidak ditemukan');
+        }
         try {
-            TransaksiDetailModel::where('penjualan_id', $id)->delete();
-            TransaksiModel::find($id)->delete();
-            return redirect('/transaksi')->with('success', 'Data transaksi berhasil dihapus');
+            $penjualan->detail()->delete(); // Delete related details
+            $penjualan->delete(); // Delete the main record
+
+            return redirect('/penjualan')->with('success', 'Data Transaksi berhasil dihapus');
         } catch (\Illuminate\Database\QueryException $e) {
-            return redirect('/transaksi')->with('error', 'Data transaksi gagal dihapus ' . $e->getMessage());
+            return redirect('/penjualan')->with('error', 'Data barang gagal dihapus karena masih terdapat tabel lain yang terkait dengan data ini');
         }
     }
 }

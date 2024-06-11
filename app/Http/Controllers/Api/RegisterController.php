@@ -2,37 +2,39 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Models\UserModel;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use App\Models\UserModel;
 
 class RegisterController extends Controller
 {
     public function __invoke(Request $request)
     {
-        // Menetapkan validasi
+        //set validation rules
         $validator = Validator::make($request->all(), [
             'username' => 'required',
             'nama' => 'required',
             'password' => 'required|min:5|confirmed',
             'level_id' => 'required',
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048'
         ]);
 
-        // Jika validasi gagal
+        //if validation fails
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
 
-        // Membuat pengguna baru
+        //create user
         $user = UserModel::create([
             'username' => $request->username,
             'nama' => $request->nama,
             'password' => bcrypt($request->password),
             'level_id' => $request->level_id,
+            'image' => $request->file->hashName(),
         ]);
 
-        // Mengembalikan respons JSON jika pengguna berhasil dibuat
+        //return JSON response if user is created
         if ($user) {
             return response()->json([
                 'success' => true,
@@ -40,7 +42,7 @@ class RegisterController extends Controller
             ], 201);
         }
 
-        // Mengembalikan respons JSON jika proses penyisipan gagal
+        //return JSON response if the process of insertion failed
         return response()->json([
             'success' => false,
         ], 409);

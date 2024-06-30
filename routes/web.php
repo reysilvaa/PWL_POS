@@ -13,6 +13,7 @@ use App\Http\Controllers\ManagerController;
 use App\Http\Controllers\StokController;
 use App\Http\Controllers\TransaksiController;
 use App\Http\Controllers\Api\RegisterController;
+use App\Http\Controllers\FileUploadController;
 
 /*
 |--------------------------------------------------------------------------
@@ -129,3 +130,7 @@ Route::group(['middleware' => ['auth']], function () {
 
 Route::post('/register1', 'App\Http\Controllers\Api\RegisterController')->name('register1');
 Route::post('/transaksi', [BarangController::class, 'store']);
+
+
+Route::get('file-upload', [FileUploadController::class,'fileUpload']);
+Route::post('file-upload', [FileUploadController::class,'prosesFileUpload']);
